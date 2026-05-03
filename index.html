@@ -1,137 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>APPLE GAMING FF · TeraBox Pro Downloader</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #020408; font-family: 'Inter', sans-serif; color: #eef5ff; padding: 1.5rem; }
-    .container { max-width: 900px; margin: 0 auto; }
-    .header { text-align: center; margin-bottom: 2rem; }
-    .brand { font-family: 'Orbitron'; font-size: 2rem; color: #00ffcc; text-shadow: 0 0 10px #00ffcc; }
-    .input-card { background: rgba(8, 18, 30, 0.8); padding: 20px; border-radius: 15px; border: 1px solid #2d3e6e; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 255, 204, 0.1); }
-    input { width: 100%; padding: 12px; background: #000; border: 1px solid #2c4a7a; color: #fff; border-radius: 8px; margin-bottom: 10px; outline: none; }
-    input:focus { border-color: #00ffcc; }
-    .btn-main { width: 100%; padding: 12px; background: linear-gradient(90deg, #00ffcc, #3bc9ff); border: none; color: #000; font-weight: bold; border-radius: 8px; cursor: pointer; font-family: 'Orbitron'; transition: 0.3s; }
-    .btn-main:hover { opacity: 0.8; transform: scale(1.01); }
-    #status { text-align: center; margin: 10px 0; font-size: 0.9rem; color: #3bc9ff; }
-    .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-    .file-card { background: #0b1622; border: 1px solid #2e497a; border-radius: 12px; padding: 15px; transition: 0.3s; position: relative; overflow: hidden; }
-    .file-card:hover { border-color: #00ffcc; transform: translateY(-3px); }
-    .file-name { font-size: 0.9rem; font-weight: 600; margin-bottom: 15px; color: #fff; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .file-actions { display: flex; gap: 10px; }
-    .btn-sm { flex: 1; padding: 10px; border-radius: 6px; text-align: center; text-decoration: none; font-size: 0.85rem; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
-    .btn-preview { background: rgba(59, 201, 255, 0.2); color: #3bc9ff; border: 1px solid #3bc9ff; }
-    .btn-preview:hover { background: #3bc9ff; color: #000; }
-    .btn-dl { background: #00ffcc; color: #000; }
-    .btn-dl:hover { background: #00ccaa; }
-    .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 999; justify-content: center; align-items: center; flex-direction: column; }
-    video { width: 90%; max-width: 800px; border-radius: 10px; border: 2px solid #00ffcc; box-shadow: 0 0 20px rgba(0, 255, 204, 0.3); }
-    .close-btn { color: white; margin-bottom: 15px; cursor: pointer; font-size: 1rem; background: #ff4d6d; padding: 8px 20px; border-radius: 20px; font-weight: bold; }
-  </style>
-</head>
-<body>
-
-<div class="container">
-  <div class="header">
-    <div class="brand">APPLE GAMING FF</div>
-    <p>TeraBox Pro xAPIverse System</p>
-  </div>
-
-  <div class="input-card">
-    <input type="text" id="targetLink" placeholder="Paste your TeraBox link here (e.g. 1024terabox.com/...)">
-    <button class="btn-main" id="fetchBtn">FETCH DOWNLOAD LINKS</button>
-    <div id="status">Ready to unlock files</div>
-  </div>
-
-  <div id="fileList" class="file-grid"></div>
-</div>
-
-<div id="previewModal" class="modal">
-  <div class="close-btn" onclick="closePreview()">CLOSE PREVIEW</div>
-  <video id="previewPlayer" controls></video>
-</div>
-
-<script>
-  const fetchBtn = document.getElementById('fetchBtn');
-  const status = document.getElementById('status');
-  const list = document.getElementById('fileList');
-
   fetchBtn.addEventListener('click', async () => {
-    const url = document.getElementById('targetLink').value.trim();
-    if(!url) return alert("Please paste a TeraBox link!");
+    const urlInput = document.getElementById('targetLink').value.trim();
+    if(!urlInput) return alert("Please paste a TeraBox link!");
 
-    status.innerHTML = "⏳ Connecting to Pro API... Please wait.";
+    status.innerHTML = "⏳ API is processing... Please wait.";
     list.innerHTML = "";
 
     try {
-      // Using /api/terabox-pro and your provided sk_ key
       const response = await fetch('https://xapiverse.com/api/terabox-pro', {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json',
               'xAPIverse-Key': 'sk_f6d0c554a515a66219085c746e99e32f'
           },
-          body: JSON.stringify({ "url": url })
+          body: JSON.stringify({ "url": urlInput }),
+          mode: 'cors' // CORS নিশ্চিত করার জন্য
       });
 
       const data = await response.json();
+      console.log("API Response:", data); // ব্রাউজার কনসোলে চেক করার জন্য
 
-      if(data.success && data.data) {
-        // If data.data is an array (folder) or a single object
-        const files = Array.isArray(data.data) ? data.data : [data.data];
+      if(data.success && (data.data || data.file_name)) {
+        // যদি ডাটা সরাসরি আসে বা অ্যারে হিসেবে আসে
+        const files = Array.isArray(data.data) ? data.data : (data.data ? [data.data] : [data]);
         
         files.forEach(file => {
-          // Some APIs return 'download_link' or 'direct_link', using both as fallback
-          const finalUrl = file.direct_link || file.download_link;
+          const finalUrl = file.direct_link || file.download_link || file.url;
           const fileName = file.file_name || "Video_File.mp4";
-          createFileCard(fileName, finalUrl);
+          if(finalUrl) createFileCard(fileName, finalUrl);
         });
         
-        status.innerHTML = `✅ Found ${files.length} file(s)!`;
+        status.innerHTML = `✅ Found ${list.childElementCount} file(s)!`;
       } else {
-        status.innerHTML = "❌ Error: " + (data.message || "Failed to fetch files.");
+        // যদি API থেকে মেসেজ আসে সেটা দেখাবে
+        status.innerHTML = "❌ Server Message: " + (data.message || "No data found.");
       }
 
     } catch (err) {
-      status.innerHTML = "❌ Connection failed. Check API key status or Network.";
+      status.innerHTML = "❌ Connection Failed. Try refreshing the page.";
       console.error("Fetch Error:", err);
     }
   });
-
-  function createFileCard(name, url) {
-    if(!url) return;
-    const card = document.createElement('div');
-    card.className = 'file-card';
-    card.innerHTML = `
-      <div class="file-name"><i class="fas fa-file-video" style="color: #00ffcc; margin-right: 5px;"></i> ${name}</div>
-      <div class="file-actions">
-        <button class="btn-sm btn-preview" onclick="openPreview('${url}')">PREVIEW</button>
-        <a href="${url}" class="btn-sm btn-dl" target="_blank" rel="noopener noreferrer">DOWNLOAD</a>
-      </div>
-    `;
-    list.appendChild(card);
-  }
-
-  function openPreview(url) {
-    const modal = document.getElementById('previewModal');
-    const player = document.getElementById('previewPlayer');
-    player.src = url;
-    modal.style.display = 'flex';
-    player.play().catch(e => console.log("Auto-play blocked or link expired."));
-  }
-
-  function closePreview() {
-    const modal = document.getElementById('previewModal');
-    const player = document.getElementById('previewPlayer');
-    player.pause();
-    modal.style.display = 'none';
-    player.src = "";
-  }
-</script>
-
-</body>
-</html>
+  
